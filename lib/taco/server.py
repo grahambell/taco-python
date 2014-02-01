@@ -1,5 +1,5 @@
 # Taco Python server module.
-# Copyright (C) 2013 Graham Bell
+# Copyright (C) 2013-2014 Graham Bell
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ import sys
 from taco.transport import TacoTransport
 
 actions = [
+    'call_class_method',
     'call_function',
     'call_method',
     'construct_object',
@@ -147,6 +148,18 @@ def _find_attr(name):
 
     return result
 
+def call_class_method(message):
+    """Call the class method specified in the message.
+
+    The context, if present in the message, is ignored.
+    """
+
+    cls =  _find_attr(message['class'])
+    func = getattr(cls, message['name'])
+    return _make_result(func(
+        *(message['args'] if message['args'] is not None else ()),
+        **(message['kwargs'] if message['kwargs'] is not None else {})))
+
 def call_function(message):
     """Call the function specified in the message.
 
@@ -175,7 +188,7 @@ def construct_object(message):
     Works similarly to call_function.
     """
 
-    cls =  _find_attr(message['name'])
+    cls =  _find_attr(message['class'])
     return _make_result(cls(
         *(message['args'] if message['args'] is not None else ()),
         **(message['kwargs'] if message['kwargs'] is not None else {})))

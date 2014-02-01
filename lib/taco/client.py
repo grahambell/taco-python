@@ -1,5 +1,5 @@
 # Taco Python client module.
-# Copyright (C) 2013 Graham Bell
+# Copyright (C) 2013-2014 Graham Bell
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -96,6 +96,28 @@ class Taco():
         else:
             raise Exception('received unknown action: ' + action)
 
+    def call_class_method(self, class_, name, *args, **kwargs):
+        """Invoke a class method call in the connected server.
+
+        The context (void / scalar / list) can be specified as a
+        keyword argument "context" unless the "disable_context" attribute
+        has been set.
+        """
+
+        if 'context' in kwargs and not self.disable_context:
+            context = kwargs.pop('context')
+        else:
+            context = None
+
+        return self._interact({
+            'action': 'call_class_method',
+            'class': class_,
+            'name': name,
+            'args': args,
+            'kwargs': kwargs,
+            'context': context,
+        })
+
     def call_function(self, name, *args, **kwargs):
         """Invoke a function call in the connected server.
 
@@ -134,7 +156,7 @@ class Taco():
             'context': context,
         })
 
-    def construct_object(self, name, *args, **kwargs):
+    def construct_object(self, class_, *args, **kwargs):
         """Invoke an object constructor.
 
         If successful, this should return a TacoObject instance which
@@ -144,7 +166,7 @@ class Taco():
 
         return self._interact({
             'action': 'construct_object',
-            'name': name,
+            'class': class_,
             'args': args,
             'kwargs': kwargs,
         })
@@ -218,7 +240,7 @@ class Taco():
 
         return func
 
-    def constructor(self, name):
+    def constructor(self, class_):
         """Convience method giving a function which calls construct_object.
 
         For example constructing multiple datetime objects:
@@ -233,6 +255,6 @@ class Taco():
         """
 
         def func(*args, **kwargs):
-            return self.construct_object(name, *args, **kwargs)
+            return self.construct_object(class_, *args, **kwargs)
 
         return func
