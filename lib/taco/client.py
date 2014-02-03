@@ -42,10 +42,7 @@ class Taco():
         ($PATH).
 
         The server script will be launched using subprocess.Popen
-        and a TacoTransport object will be connected to it. from_obj
-        and to_obj functions are passed to the TacoTransport constructor
-        to allow the JSON encoder/decoder to deal with Taco object
-        references.
+        and a TacoTransport object will be connected to it.
         """
 
         if script is not None:
@@ -61,6 +58,16 @@ class Taco():
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE)
 
+        self.xp = self._construct_transport(p.stdout, p.stdin)
+
+    def _construct_transport(self, in_, out):
+        """Prepare a TacoTransport object for use with this client.
+
+        from_obj and to_obj functions are passed to the TacoTransport
+        constructor to allow the JSON encoder/decoder to deal with Taco
+        object references.
+        """
+
         def from_obj(obj):
             if isinstance(obj, TacoObject):
                 return {'_Taco_Object_': obj.number}
@@ -73,7 +80,7 @@ class Taco():
             else:
                 return dict_
 
-        self.xp = TacoTransport(p.stdout, p.stdin, from_obj, to_obj)
+        return TacoTransport(in_, out, from_obj, to_obj)
 
     def _interact(self, message):
         """Private general interaction method used to implement other methods.
