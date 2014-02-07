@@ -23,255 +23,265 @@ import sys
 
 from taco.transport import TacoTransport
 
-actions = [
-    'call_class_method',
-    'call_function',
-    'call_method',
-    'construct_object',
-    'destroy_object',
-    'get_attribute',
-    'get_value',
-    'import_module',
-    'set_attribute',
-    'set_value',
-]
+class TacoServer():
+    """Taco server class.
 
-def main():
-    """Main server function.
-
-    Constructs a TacoTransport object communicating via standard
-    input and standard output, and then enters a message handling
-    loop.  The loop exits on failure to read another message.
-
-    sys.stdout is set to sys.stderr to try to avoid text being
-    written to standard output, which would corrupt communications
-    with the client.
+    This class implements a Taco server for Python.
     """
 
-    # When running under Python 3, detach the text wrappers from
-    # stdin and stdout so that we have binary streams which act
-    # like other streams which TacoTransport needs to handle.
-    try:
-        in_ = sys.stdin.detach()
-        out = sys.stdout.detach()
-    except AttributeError:
-        in_ = sys.stdin
-        out = sys.stdout
+    def __init__(self):
+        """Construct TacoServer object.
 
-    # Redirect stdout to stderr to prevent any called functions from
-    # writing into the Taco message stream.
-    sys.stdout = sys.stderr
+        This method also calls the _construct_transport method
+        to construct a transport object.
+        """
 
-    xp = TacoTransport(in_, out, _from_obj, _to_obj)
+        self.ns = {}
+        self.objects = {}
+        self.nobject = 0
 
-    while True:
-        message = xp.read()
+        self._null_result = self._make_result(None)
 
-        if message is None:
-            break
+        self.xp = self._construct_transport()
 
-        act = message['action']
+    def _construct_transport(self, in_=None, out=None):
+        """Create TacoTransport object.
 
-        if act in actions:
+        Constructs a TacoTransport object communicating via standard
+        input and standard output.
+
+        sys.stdout is set to sys.stderr to try to avoid text being
+        written to standard output, which would corrupt communications
+        with the client.
+        """
+
+        if in_ is None or out is None:
+            # When running under Python 3, detach the text wrappers from
+            # stdin and stdout so that we have binary streams which act
+            # like other streams which TacoTransport needs to handle.
             try:
-                res = globals()[act](message)
-            except Exception as e:
+                in_ = sys.stdin.detach()
+                out = sys.stdout.detach()
+            except AttributeError:
+                in_ = sys.stdin
+                out = sys.stdout
+
+            # Redirect stdout to stderr to prevent any called functions from
+            # writing into the Taco message stream.
+            sys.stdout = sys.stderr
+
+        def from_obj(obj):
+            """Place object in the objects dictionary and return a Taco object
+            reference."""
+
+            self.nobject += 1
+            self.objects[self.nobject] = obj
+            return {'_Taco_Object_': self.nobject}
+
+        def to_obj(dict_):
+            """If dict_ is a Taco object reference, fetch the corresponding
+            object from objects dictionary."""
+
+            if '_Taco_Object_' in dict_:
+                return self.objects[dict_['_Taco_Object_']]
+            else:
+                return dict_
+
+        return TacoTransport(in_, out, from_obj, to_obj)
+
+    def run(self):
+        """Main server function.
+
+        Enters a message handling loop.  The loop exits on failure to
+        read another message.
+        """
+
+        while True:
+            message = self.xp.read()
+
+            if message is None:
+                break
+
+            act = message['action']
+
+            if hasattr(self, act) and not act.startswith('_'):
+                try:
+                    res = getattr(self, act)(message)
+                except Exception as e:
+                    res = {
+                        'action': 'exception',
+                        'message': 'exception caught: ' + str(e),
+                    }
+            else:
                 res = {
                     'action': 'exception',
-                    'message': 'exception caught: ' + str(e),
+                    'message': 'unknown action: ' + act,
                 }
+
+            self.xp.write(res)
+
+    def _make_result(self, result):
+        """Construct Taco result message."""
+
+        return {
+            'action': 'result',
+            'result': result,
+        }
+
+    def _find_attr(self, name):
+        """Attempt to look up the given name.
+
+        The name is split into parts on the "." character and the root part
+        is searched for in the "ns" dictionary, in globals() and finally in
+        builtins.  Once the root part is found, attributes corresponding to the
+        remainder of the name are looked up.  An exception is raised
+        (explicity) if the root part cannot be found or (implicitly)
+        if one of the remaining parts cannot be found.
+        """
+
+        parts = name.split('.')
+        root = parts.pop(0)
+
+        if root in self.ns:
+            result = self.ns[root]
+        elif root in globals():
+            result = globals()[root]
+        elif hasattr(builtins, root):
+            result = getattr(builtins, root)
         else:
-            res = {
-                'action': 'exception',
-                'message': 'unknown action: ' + act,
-            }
+            raise Exception('cannot find "{0}"'.format(root))
 
-        xp.write(res)
+        for part in parts:
+            result = getattr(result, part)
 
-ns = {}
-objects = {}
-nobject = 0
+        return result
 
-def _from_obj(obj):
-    """Place object in the objects dictionary and return a Taco object
-    reference."""
+    def call_class_method(self, message):
+        """Call the class method specified in the message.
 
-    global nobject
-    nobject += 1
-    objects[nobject] = obj
-    return {'_Taco_Object_': nobject}
+        The context, if present in the message, is ignored.
+        """
 
-def _to_obj(dict_):
-    """If dict_ is a Taco object reference, fetch the corresponding
-    object from objects dictionary."""
+        cls =  self._find_attr(message['class'])
+        func = getattr(cls, message['name'])
+        return self._make_result(func(
+            *(message['args'] if message['args'] is not None else ()),
+            **(message['kwargs'] if message['kwargs'] is not None else {})))
 
-    if '_Taco_Object_' in dict_:
-        return objects[dict_['_Taco_Object_']]
-    else:
-        return dict_
+    def call_function(self, message):
+        """Call the function specified in the message.
 
-def _make_result(result):
-    """Construct Taco result message."""
+        The context, if present in the message, is ignored.
+        """
 
-    return {
-        'action': 'result',
-        'result': result,
-    }
+        func = self._find_attr(message['name'])
+        return self._make_result(func(
+            *(message['args'] if message['args'] is not None else ()),
+            **(message['kwargs'] if message['kwargs'] is not None else {})))
 
-null_result = _make_result(None)
+    def call_method(self, message):
+        """Call an object method.
 
-def _find_attr(name):
-    """Attempt to look up the given name.
+        Works similarly to call_function.
+        """
 
-    The name is split into parts on the "." character and the root part
-    is searched for in the "ns" dictionary, in globals() and finally in
-    builtins.  Once the root part is found, attributes corresponding to the
-    remainder of the name are looked up.  An exception is raised
-    (explicity) if the root part cannot be found or (implicitly)
-    if one of the remaining parts cannot be found.
-    """
+        obj = self.objects[message['number']]
+        return self._make_result(getattr(obj, message['name'])(
+            *(message['args'] if message['args'] is not None else ()),
+            **(message['kwargs'] if message['kwargs'] is not None else {})))
 
-    parts = name.split('.')
-    root = parts.pop(0)
+    def construct_object(self, message):
+        """Call an object constructor.
 
-    if root in ns:
-        result = ns[root]
-    elif root in globals():
-        result = globals()[root]
-    elif hasattr(builtins, root):
-        result = getattr(builtins, root)
-    else:
-        raise Exception('cannot find "{0}"'.format(root))
+        Works similarly to call_function.
+        """
 
-    for part in parts:
-        result = getattr(result, part)
+        cls =  self._find_attr(message['class'])
+        return self._make_result(cls(
+            *(message['args'] if message['args'] is not None else ()),
+            **(message['kwargs'] if message['kwargs'] is not None else {})))
 
-    return result
+    def destroy_object(self, message):
+        """Remove an object from the objects dictionary."""
 
-def call_class_method(message):
-    """Call the class method specified in the message.
+        del self.objects[message['number']]
+        return self._null_result
 
-    The context, if present in the message, is ignored.
-    """
+    def get_attribute(self, message):
+        """Get an attribute value from an object."""
 
-    cls =  _find_attr(message['class'])
-    func = getattr(cls, message['name'])
-    return _make_result(func(
-        *(message['args'] if message['args'] is not None else ()),
-        **(message['kwargs'] if message['kwargs'] is not None else {})))
+        return self._make_result(getattr(self.objects[message['number']],
+                                         message['name']))
 
-def call_function(message):
-    """Call the function specified in the message.
+    def get_value(self, message):
+        """Get the value of a variable.
 
-    The context, if present in the message, is ignored.
-    """
+        If the variable name contains "."-separated components, then it is
+        looked up using the _find_attr function.
+        """
 
-    func = _find_attr(message['name'])
-    return _make_result(func(
-        *(message['args'] if message['args'] is not None else ()),
-        **(message['kwargs'] if message['kwargs'] is not None else {})))
+        (root, _, name) = message['name'].rpartition('.')
 
-def call_method(message):
-    """Call an object method.
+        if root:
+            base = self._find_attr(root)
+        else:
+            base = self.ns
 
-    Works similarly to call_function.
-    """
+        try:
+            return self._make_result(base[name])
+        except TypeError:
+            return self._make_result(getattr(base, name))
 
-    obj = objects[message['number']]
-    return _make_result(getattr(obj, message['name'])(
-        *(message['args'] if message['args'] is not None else ()),
-        **(message['kwargs'] if message['kwargs'] is not None else {})))
+    def import_module(self, message):
+        """Import a module or names from a module.
 
-def construct_object(message):
-    """Call an object constructor.
+        Without arguments, the module is imported and the top level package
+        name is inserted into the "ns" dictionary.
 
-    Works similarly to call_function.
-    """
+        With "args" specified, it is used as a list of names to import
+        from the module, and those names are inserted into the "ns"
+        dictionary.
 
-    cls =  _find_attr(message['class'])
-    return _make_result(cls(
-        *(message['args'] if message['args'] is not None else ()),
-        **(message['kwargs'] if message['kwargs'] is not None else {})))
+        Currently any "kwargs" in the message are ignored.
+        """
 
-def destroy_object(message):
-    """Remove an object from the objects dictionary."""
+        if message['args']:
+            # With arguments, emulate: from name import args
 
-    del objects[message['number']]
-    return null_result
+            mod = __import__(message['name'], fromlist=message['args'], level=0)
+            for name in message['args']:
+                self.ns[name] = getattr(mod, name)
+        else:
+            # Without arguments do plain import
+            mod = __import__(message['name'], level=0)
+            self.ns[mod.__name__] = mod
 
-def get_attribute(message):
-    """Get an attribute value from an object."""
+        return self._null_result
 
-    return _make_result(getattr(objects[message['number']], message['name']))
+    def set_attribute(self, message):
+        """Set an attribute value of an object."""
 
-def get_value(message):
-    """Get the value of a variable.
+        setattr(self.objects[message['number']],
+                message['name'], message['value'])
+        return self._null_result
 
-    If the variable name contains "."-separated components, then it is
-    looked up using the _find_attr function.
-    """
+    def set_value(self, message):
+        """Set the value of a variable.
 
-    (root, _, name) = message['name'].rpartition('.')
+        If the variable name contains "."-separated components, then it is
+        looked up using the _find_attr function.
+        """
 
-    if root:
-        base = _find_attr(root)
-    else:
-        base = ns
+        (root, _, name) = message['name'].rpartition('.')
 
-    try:
-        return _make_result(base[name])
-    except TypeError:
-        return _make_result(getattr(base, name))
+        if root:
+            base = self._find_attr(root)
+        else:
+            base = self.ns
 
-def import_module(message):
-    """Import a module or names from a module.
+        try:
+            base[name] = message['value']
+        except TypeError:
+            setattr(base, name, message['value'])
 
-    Without arguments, the module is imported and the top level package
-    name is inserted into the "ns" dictionary.
-
-    With "args" specified, it is used as a list of names to import
-    from the module, and those names are inserted into the "ns"
-    dictionary.
-
-    Currently any "kwargs" in the message are ignored.
-    """
-
-    if message['args']:
-        # With arguments, emulate: from name import args
-
-        mod = __import__(message['name'], fromlist=message['args'], level=0)
-        for name in message['args']:
-            ns[name] = getattr(mod, name)
-    else:
-        # Without arguments do plain import
-        mod = __import__(message['name'], level=0)
-        ns[mod.__name__] = mod
-
-    return null_result
-
-def set_attribute(message):
-    """Set an attribute value of an object."""
-
-    setattr(objects[message['number']], message['name'], message['value'])
-    return null_result
-
-def set_value(message):
-    """Set the value of a variable.
-
-    If the variable name contains "."-separated components, then it is
-    looked up using the _find_attr function.
-    """
-
-    (root, _, name) = message['name'].rpartition('.')
-
-    if root:
-        base = _find_attr(root)
-    else:
-        base = ns
-
-    try:
-        base[name] = message['value']
-    except TypeError:
-        setattr(base, name, message['value'])
-
-    return null_result
+        return self._null_result
