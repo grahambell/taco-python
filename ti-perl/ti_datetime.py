@@ -3,6 +3,19 @@ from unittest import TestCase
 from taco import Taco
 from taco.object import TacoObject
 
+# These assert methods were added / renamed in Python 3.2.
+if not hasattr(TestCase, 'assertNotRegex'):
+    def assertNotRegex(self, *args):
+        try:
+            self.assertRegexpMatches(*args)
+        except AssertionError:
+            pass
+        else:
+            raise AssertionError('assertNotRegex found match')
+
+    TestCase.assertRegex = TestCase.assertRegexpMatches
+    TestCase.assertNotRegex = assertNotRegex
+
 class PerlDatetimeTestCase(TestCase):
     def test_datetime(self):
         taco = Taco(lang='perl')

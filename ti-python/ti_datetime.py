@@ -3,6 +3,10 @@ from unittest import TestCase
 from taco import Taco
 from taco.object import TacoObject
 
+# This assert method was renamed in Python 3.2.
+if not hasattr(TestCase, 'assertRegex'):
+    TestCase.assertRegex = TestCase.assertRegexpMatches
+
 class PythonDatetimeTestCase(TestCase):
     def test_datetime(self):
         taco = Taco(script='scripts/taco-python')

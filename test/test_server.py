@@ -149,7 +149,7 @@ class DummyServer(TacoServer, DummyBase):
         self.in_ = BytesIO()
         self.out = BytesIO()
 
-        return super()._construct_transport(self.in_, self.out)
+        return TacoServer._construct_transport(self, self.in_, self.out)
 
 class NumberObject():
     def __init__(self, number):

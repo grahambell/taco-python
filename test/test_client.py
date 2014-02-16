@@ -6,6 +6,10 @@ from taco.object import TacoObject
 
 from . import DummyBase
 
+# This assert method was renamed in Python 3.2.
+if not hasattr(TestCase, 'assertRaisesRegex'):
+    TestCase.assertRaisesRegex = TestCase.assertRaisesRegexp
+
 class TacoClientMethodTestCase(TestCase):
     def test_interaction(self):
         t = DummyClient()
