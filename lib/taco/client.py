@@ -16,6 +16,7 @@
 
 import subprocess
 
+from taco.error import TacoReceivedError, TacoUnknownActionError
 from taco.object import TacoObject
 from taco.transport import TacoTransport
 
@@ -39,7 +40,8 @@ class Taco():
         "script" argument, or the language can be given with the "lang"
         argument.  In that case the server script will be assumed to
         be named taco-language and install in your binary search path
-        ($PATH).
+        ($PATH). If neither of these arguments is given, then a
+        ValueError will be raised.
 
         The server script will be launched using subprocess.Popen
         and a TacoTransport object will be connected to it.
@@ -50,7 +52,7 @@ class Taco():
         elif lang is not None:
             scr = 'taco-' + lang
         else:
-            raise Exception('language or script not specified')
+            raise ValueError('language or script not specified')
 
         self.disable_context = disable_context
 
@@ -72,7 +74,7 @@ class Taco():
             if isinstance(obj, TacoObject):
                 return {'_Taco_Object_': obj.number}
             else:
-                raise Exception('can not send non-Taco object')
+                raise ValueError('can not send non-Taco object')
 
         def to_obj(dict_):
             if '_Taco_Object_' in dict_:
@@ -87,7 +89,7 @@ class Taco():
 
         Writes the given message to the server and reads the response.
         If this is a result, then its value is returned.  If it is an
-        exception, then an exception is raised.
+        exception, then a TacoError exception is raised.
         """
 
         self.xp.write(message)
@@ -99,9 +101,10 @@ class Taco():
         if action == 'result':
             return response['result']
         elif action == 'exception':
-            raise Exception('received exception: ' + response['message'])
+            raise TacoReceivedError('received exception: ' +
+                                    response['message'])
         else:
-            raise Exception('received unknown action: ' + action)
+            raise TacoUnknownActionError('received unknown action: ' + action)
 
     def call_class_method(self, class_, name, *args, **kwargs):
         """Invoke a class method call in the connected server.
