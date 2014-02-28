@@ -24,7 +24,7 @@ from taco.transport import TacoTransport
 class Taco():
     """Taco client class.
 
-    Example:
+    Example::
 
         from taco import Taco
 
@@ -170,8 +170,8 @@ class Taco():
     def construct_object(self, class_, *args, **kwargs):
         """Invoke an object constructor.
 
-        If successful, this should return a TacoObject instance which
-        references the new object.  The given arguments and
+        If successful, this should return a :class:`~taco.object.TacoObject`
+        instance which references the new object.  The given arguments and
         keyword arguments are passed to the object constructor.
         """
 
@@ -240,7 +240,7 @@ class Taco():
     def function(self, name):
         """Convience method giving a function which calls call_function.
 
-        This example is equivalent to that given for this class:
+        This example is equivalent to that given for this class::
 
             sleep = taco.function('sleep')
             sleep(5)
@@ -254,12 +254,12 @@ class Taco():
     def constructor(self, class_):
         """Convience method giving a function which calls construct_object.
 
-        For example constructing multiple datetime objects:
+        For example constructing multiple datetime objects::
 
             taco.import_module('datetime', 'datetime')
             afd = taco.construct_object('datetime', 2000, 4, 1)
 
-        Could be done more easily:
+        Could be done more easily::
 
             datetime = taco.constructor('datetime')
             afd = datetime(2000, 4, 1)

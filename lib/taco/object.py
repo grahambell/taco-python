@@ -18,7 +18,7 @@
 class TacoObject():
     """Taco object class.
 
-    This class is used to represent objects through by Taco actions.
+    This class is used to represent objects by Taco actions.
     Instances of this class will returned by methods of Taco
     objects and should not normally be constructed explicitly.
 
@@ -69,7 +69,7 @@ class TacoObject():
         """Convenience method giving a function which calls a method.
 
         Returns a function which can be used to invoke a method on
-        the server object. For example:
+        the server object. For example::
 
             strftime = afd.method('strftime')
             print(strftime('%Y-%m-%d'))
