@@ -23,6 +23,7 @@ import sys
 
 from taco.transport import TacoTransport
 
+
 class TacoServer():
     """Taco server class.
 
@@ -162,7 +163,7 @@ class TacoServer():
         The context, if present in the message, is ignored.
         """
 
-        cls =  self._find_attr(message['class'])
+        cls = self._find_attr(message['class'])
         func = getattr(cls, message['name'])
         return self._make_result(func(
             *(message['args'] if message['args'] is not None else ()),
@@ -196,7 +197,7 @@ class TacoServer():
         Works similarly to call_function.
         """
 
-        cls =  self._find_attr(message['class'])
+        cls = self._find_attr(message['class'])
         return self._make_result(cls(
             *(message['args'] if message['args'] is not None else ()),
             **(message['kwargs'] if message['kwargs'] is not None else {})))
@@ -248,7 +249,8 @@ class TacoServer():
         if message['args']:
             # With arguments, emulate: from name import args
 
-            mod = __import__(message['name'], fromlist=message['args'], level=0)
+            mod = __import__(message['name'], fromlist=message['args'],
+                             level=0)
             for name in message['args']:
                 self.ns[name] = getattr(mod, name)
         else:

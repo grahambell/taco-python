@@ -20,6 +20,7 @@ from taco.error import TacoReceivedError, TacoUnknownActionError
 from taco.object import TacoObject
 from taco.transport import TacoTransport
 
+
 class Taco():
     """Taco client class.
 

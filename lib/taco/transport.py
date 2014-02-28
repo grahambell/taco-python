@@ -17,6 +17,7 @@
 from codecs import utf_8_decode, utf_8_encode
 from json import JSONDecoder, JSONEncoder
 
+
 class TacoTransport():
     """Taco transport class.
 
