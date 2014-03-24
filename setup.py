@@ -7,7 +7,7 @@ with open('README.rst') as f:
 
 setup(
     name='taco',
-    version='0.0.0',
+    version='0.1.0',
     description='Taco module for Python',
     long_description=long_description,
     author='Graham Bell',
