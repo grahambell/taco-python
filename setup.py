@@ -17,7 +17,7 @@ setup(
     packages=['taco'],
     scripts=['scripts/taco-python'],
     classifiers=[
-        'Development Status :: 3 - Alpha'
+        'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Topic :: Software Development :: Libraries :: Python Modules',
