@@ -21,6 +21,11 @@ for each language, which should be straightforward to install,
 and its messages are designed to be generic so that they
 can be used between any combination of languages.
 
+For more information about Taco, please see the
+`Taco Homepage`_.
+
+.. _`Taco Homepage`: http://grahambell.github.io/taco/
+
 .. endtacointro
 
 Examples
@@ -145,3 +150,10 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+Additional Links
+----------------
+
+* `Documentation at Read the Docs <http://taco-module-for-python.readthedocs.org/en/latest/>`_
+* `Repository at GitHub <https://github.com/grahambell/taco-python>`_
+* `Taco Homepage`_
