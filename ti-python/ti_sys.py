@@ -1,6 +1,7 @@
 from unittest import TestCase
 
 from taco import Taco
+from taco.object import TacoObject
 
 class PythonSysTestCase(TestCase):
     def test_sys(self):
@@ -18,6 +19,8 @@ class PythonSysTestCase(TestCase):
 
         # First element of sys.version_info 2 or 3?
         r = taco.get_value('sys.version_info')
+        if isinstance(r, TacoObject):
+            r = taco.construct_object('list', r)
 
         self.assertIsInstance(r, list)
 
