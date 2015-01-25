@@ -69,6 +69,15 @@ class TacoClientActionTestCase(TestCase):
             'name': 'ta',
         })
 
+    def test_get_class_attribute(self):
+        t = DummyClient()
+        t.get_class_attribute('SomeClass', 'SOME_ATTR')
+        self.assertEqual(t.msg, {
+            'action': 'get_class_attribute',
+            'class': 'SomeClass',
+            'name': 'SOME_ATTR',
+        })
+
     def test_get_value(self):
         t = DummyClient()
         t.get_value('tv')
@@ -96,6 +105,16 @@ class TacoClientActionTestCase(TestCase):
             'number': 7777777,
             'name': 'ta',
             'value': 88,
+        })
+
+    def test_set_class_attribute(self):
+        t = DummyClient()
+        t.set_class_attribute('AnotherClass', 'ANOTHER_ATTR', 'xyz')
+        self.assertEqual(t.msg, {
+            'action': 'set_class_attribute',
+            'class': 'AnotherClass',
+            'name': 'ANOTHER_ATTR',
+            'value': 'xyz',
         })
 
     def test_set_value(self):

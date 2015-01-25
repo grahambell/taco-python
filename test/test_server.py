@@ -107,6 +107,14 @@ class TacoServerActionTestCase(TestCase):
             'name': 'xyz',
         })['result'], 888)
 
+    def test_get_class_attribute(self):
+        ts = DummyServer()
+        ts.ns['NumberObject'] = NumberObject
+        self.assertEqual(ts.get_class_attribute({
+            'class': 'NumberObject',
+            'name': 'static_attr',
+        })['result'], 5678)
+
     def test_get_value(self):
         ts = DummyServer()
         ts.import_module({'name': 'sys', 'args': [], 'kwargs': {}})
@@ -134,6 +142,16 @@ class TacoServerActionTestCase(TestCase):
         })
         self.assertEqual(ob.number, 55)
 
+    def test_get_class_attribute(self):
+        ts = DummyServer()
+        ts.ns['NumberObject'] = NumberObject
+        ts.set_class_attribute({
+            'class': 'NumberObject',
+            'name': 'static_attr',
+            'value': 8765,
+        })
+        self.assertEqual(NumberObject.static_attr, 8765)
+
     def test_set_value(self):
         ts = DummyServer()
         d = {'xxx': 'yyy'}
@@ -152,5 +170,7 @@ class DummyServer(TacoServer, DummyBase):
         return TacoServer._construct_transport(self, self.in_, self.out)
 
 class NumberObject():
+    static_attr = 5678
+
     def __init__(self, number):
         self.number = number

@@ -214,6 +214,12 @@ class TacoServer():
         return self._make_result(getattr(self.objects[message['number']],
                                          message['name']))
 
+    def get_class_attribute(self, message):
+        """Get a static attribute from a class."""
+
+        cls = self._find_attr(message['class'])
+        return self._make_result(getattr(cls, message['name']))
+
     def get_value(self, message):
         """Get the value of a variable.
 
@@ -265,6 +271,13 @@ class TacoServer():
 
         setattr(self.objects[message['number']],
                 message['name'], message['value'])
+        return self._null_result
+
+    def set_class_attribute(self, message):
+        """Set a static attribute from a class."""
+
+        cls = self._find_attr(message['class'])
+        setattr(cls, message['name'], message['value'])
         return self._null_result
 
     def set_value(self, message):

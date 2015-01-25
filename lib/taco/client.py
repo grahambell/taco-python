@@ -197,6 +197,15 @@ class Taco():
             'name': name,
         })
 
+    def get_class_attribute(self, class_, name):
+        """Request the value of a class (static) attribute."""
+
+        return self._interact({
+            'action': 'get_class_attribute',
+            'class': class_,
+            'name': name,
+        })
+
     def get_value(self, name):
         """Request the value of the given variable."""
 
@@ -224,6 +233,16 @@ class Taco():
         self._interact({
             'action': 'set_attribute',
             'number': number,
+            'name': name,
+            'value': value,
+        })
+
+    def set_class_attribute(self, class_, name, value):
+        """Set the value of a class (static) attribute."""
+
+        return self._interact({
+            'action': 'set_class_attribute',
+            'class': class_,
             'name': name,
             'value': value,
         })
