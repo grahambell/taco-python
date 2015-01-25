@@ -133,6 +133,10 @@ of "server" scripts.
 
       PYTHONPATH=lib python -m unittest discover -v -s 'ti-perl' -p 'ti_*.py'
 
+  * Java ::
+
+      PYTHONPATH=lib python -m unittest discover -v -s 'ti-java' -p 'ti_*.py'
+
 .. endtacoinstall
 
 License
