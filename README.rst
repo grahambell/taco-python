@@ -158,7 +158,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 Additional Links
 ----------------
 
-* `Documentation at Read the Docs <http://taco-module-for-python.readthedocs.org/en/latest/>`_
+* `Documentation at Read the Docs <http://taco-module-for-python.readthedocs.io/en/latest/>`_
 * `Repository at GitHub <https://github.com/grahambell/taco-python>`_
 * `Entry on PyPI <https://pypi.python.org/pypi/taco>`_
 * `Taco Homepage`_
